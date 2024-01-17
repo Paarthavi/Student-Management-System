@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, \
 	QGridLayout, QPushButton, QMainWindow, QTableWidget, QTableWidgetItem, \
-	QDialog, QVBoxLayout, QComboBox
-from PyQt6.QtGui import QAction
+	QDialog, QVBoxLayout, QComboBox, QToolBar
+from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
 
@@ -9,12 +9,18 @@ import sqlite3
 class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
+		# Add title
 		self.setWindowTitle("Student Management System")
 
+		# Set a minimum size for the main window
+		self.setMinimumSize(800, 600)
+
+		# Add menu bar
 		file_menu_item = self.menuBar().addMenu("&File")
 		help_menu_item = self.menuBar().addMenu("&Help")
+		edit_menu_item = self.menuBar().addMenu("&Edit")
 
-		add_student_action = QAction("Add Student", self)
+		add_student_action = QAction(QIcon("icons/add.png"), "Add Student", self)
 		add_student_action.triggered.connect(self.insert)
 		file_menu_item.addAction(add_student_action)
 
@@ -22,11 +28,23 @@ class MainWindow(QMainWindow):
 		help_menu_item.addAction(about_action)
 		# about_action.setMenuRole(QAction.MenuRole.NoRole) ---> If help item doesn't come up
 
+		search_action = QAction(QIcon("icons/search.png"), "Search", self)
+		edit_menu_item.addAction(search_action)
+		edit_menu_item.triggered.connect(self.search)
+
+		# Add table widget
 		self.table = QTableWidget()
 		self.table.setColumnCount(4)
 		self.table.setHorizontalHeaderLabels(("ID", "Name", "Course", "Mobile"))
 		self.table.verticalHeader().setVisible(False)
 		self.setCentralWidget(self.table)
+
+		# Create toolbar and add elements
+		toolbar = QToolBar()
+		toolbar.setMovable(True)
+		self.addToolBar(toolbar)
+		toolbar.addAction(add_student_action)
+		toolbar.addAction(search_action)
 
 	def load_data(self):
 		connection = sqlite3.connect("database.db")
@@ -43,11 +61,19 @@ class MainWindow(QMainWindow):
 		dialog = InsertDialog()
 		dialog.exec()
 
+	def search(self):
+		dialog = SearchDialog()
+		dialog.exec()
+
 
 class InsertDialog(QDialog):
 	def __init__(self):
 		super().__init__()
+
+		# Add a title
 		self.setWindowTitle("Insert Student Data")
+
+		# Set fixed width and height
 		self.setFixedWidth(300)
 		self.setFixedHeight(300)
 
@@ -70,6 +96,7 @@ class InsertDialog(QDialog):
 		self.mobile.setPlaceholderText("Mobile")
 		layout.addWidget(self.mobile)
 
+		# Add submit button
 		submit_button = QPushButton("Register")
 		submit_button.clicked.connect(self.add_student)
 		layout.addWidget(submit_button)
@@ -88,6 +115,47 @@ class InsertDialog(QDialog):
 		cursor.close()
 		connection.close()
 		main_window.load_data()
+
+class SearchDialog(QDialog):
+	def __init__(self):
+		super().__init__()
+
+		# Add a title
+		self.setWindowTitle("Search Student")
+
+		# Set fixed width and height
+		self.setFixedWidth(300)
+		self.setFixedHeight(300)
+
+		search_layout = QVBoxLayout()
+
+		# Add a student name widget
+		self.student_name = QLineEdit()
+		self.student_name.setPlaceholderText("Name")
+		search_layout.addWidget(self.student_name)
+
+		# Add a search button
+		search_button = QPushButton("Search")
+		search_button.clicked.connect(self.search)
+		search_layout.addWidget(search_button)
+
+		self.setLayout(search_layout)
+
+	def search(self):
+		name = self.student_name.text()
+
+		connection = sqlite3.connect("database.db")
+		cursor = connection.cursor()
+		result = cursor.execute("SELECT * FROM students WHERE name = (?)", (name,))
+		rows = list(result)
+		print(rows)
+		items = main_window.table.findItems(name, Qt.MatchFlag.MatchFixedString)
+		for item in items:
+			print(item)
+			main_window.table.item(item.row(), 1).setSelected(True)
+
+		cursor.close()
+		connection.close()
 
 
 app = QApplication(sys.argv)
