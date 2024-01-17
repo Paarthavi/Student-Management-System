@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, \
-	QGridLayout, QPushButton, QMainWindow
+	QGridLayout, QPushButton, QMainWindow, QTableWidget
 from PyQt6.QtGui import QAction
 import sys
 
@@ -18,6 +18,13 @@ class MainWindow(QMainWindow):
 		help_menu_item.addAction(about_action)
 		# about_action.setMenuRole(QAction.MenuRole.NoRole) ---> If help item doesn't come up
 
+		self.table = QTableWidget()
+		self.table.setColumnCount(4)
+		self.table.setHorizontalHeaderLabels(("ID", "Name", "Course", "Mobile"))
+		self.setCentralWidget(self.table)
+
+	def load_data(self):
+		self.table
 
 
 app = QApplication(sys.argv)
